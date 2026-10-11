@@ -15,3 +15,7 @@ server/uploads/*
 !server/uploads/.gitkeep
 
 knowledge/
+
+# Build output and test coverage
+build/
+coverage/
