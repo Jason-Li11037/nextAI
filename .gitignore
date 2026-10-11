@@ -1,0 +1,17 @@
+.DS_Store
+.idea/
+.vscode/
+
+# Dependencies
+node_modules/
+
+# Environment variables (real values must never be committed)
+.env
+.env.*
+!.env.example
+
+# Uploaded files (keep the folder via .gitkeep)
+server/uploads/*
+!server/uploads/.gitkeep
+
+knowledge/
