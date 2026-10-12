@@ -5,6 +5,7 @@ A full-stack AI application for asking questions about an uploaded PDF, rebuilt 
 ## Tech stack
 
 - React 18 (Create React App), Ant Design and axios for the client
+- react-speech-recognition and speak-tts for the voice mode
 - Node.js 20+ and Express for the API
 - LangChain for retrieval-augmented generation (RAG)
 - OpenAI for embeddings and the chat model
@@ -19,7 +20,7 @@ src/
 ├── index.js         # React entry point
 └── components/
     ├── PdfUploader.js    # drag-and-drop upload to POST /upload
-    ├── ChatComponent.js  # question input, calls GET /chat
+    ├── ChatComponent.js  # question input and voice mode, calls GET /chat
     └── RenderQA.js       # renders the questions and answers
 server/
 ├── server.js        # Express app: POST /upload and GET /chat
@@ -70,20 +71,23 @@ The client:
 - uploads one or several files by clicking or dragging them onto the upload area
 - sends a question with the Ask button and shows it together with the two answers
 - shows a spinner while an answer is loading
+- has a voice mode: the `Chat Mode` button replaces the text input with a record button, turns what you say into a question and reads the document answer aloud
 
 Notes:
 
+- Voice mode needs a browser that supports the Web Speech API (Chromium-based browsers such as Chrome or Edge), microphone permission, and a secure context (`https` or `localhost`). The configured voice, `Google US English`, is available in Chrome.
 - The client calls the API at `http://localhost:5001` (set in `PdfUploader.js` and `ChatComponent.js`).
 - Before any upload, `/chat` falls back to `server/uploads/sample.pdf`, which is not included. If that file is missing, the request throws and the Express 4 process exits, so upload a file first.
 - Every question loads, splits and embeds the document again.
 - Dependency versions follow the original project. `multer` 1.x has published security advisories.
 - `typescript` is pinned to 4.x because `react-scripts` 5.0.1 only supports TypeScript 3 and 4. With a newer major version the lint step of `npm run build` fails.
+- `npm run build` prints three ESLint warnings for `ChatComponent.js` (two unused variables and a `useEffect` dependency). The build succeeds, but with `CI=true` (warnings treated as errors) it fails.
 
 ## Progress
 
 - [x] Express backend: PDF upload and RAG question answering
 - [x] React client: upload, ask questions and show the answers
-- [ ] Voice mode: speech recognition and speech synthesis
+- [x] Voice mode: speech recognition and speech synthesis
 - [ ] Web search answers through an MCP server and client
 - [ ] Demo documentation and deployment notes
 - [ ] Modernize the stack: Express 5, multer 2, Vite, React 19, native speech synthesis, configurable chat model
