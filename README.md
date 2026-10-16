@@ -83,7 +83,7 @@ Notes:
 - The client calls the API at `http://localhost:5001` (set in `PdfUploader.js` and `ChatComponent.js`).
 - Before any upload, `/chat` falls back to `server/uploads/sample.pdf`, which is not included. If that file is missing, the request throws and the Express 4 process exits, so upload a file first.
 - `server/chat-mcp.js` starts `server/mcp-server.js` as a child process (stdio) on the first question and reuses it. Every question calls the `search_web` tool once (5 results) and asks the model to summarise them.
-- `/chat` runs the document answer first and then the web search answer. If either step throws (for example a missing key or no network), the request fails and the Express 4 process exits.
+- `/chat` runs the document answer first and then the web search answer. If an OpenAI request fails (for example with a wrong key or without network access) or the search server cannot be started, the request throws and the Express 4 process exits. A failing web search does not throw: the search tool returns the error text and the model summarises it, so `mcpAnswer` then contains that text.
 - Every question loads, splits and embeds the document again.
 - Dependency versions follow the original project. `multer` 1.x has published security advisories.
 - `typescript` is pinned to 4.x because `react-scripts` 5.0.1 only supports TypeScript 3 and 4. With a newer major version the lint step of `npm run build` fails.
