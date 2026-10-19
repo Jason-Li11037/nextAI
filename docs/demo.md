@@ -75,6 +75,7 @@ Speech recognition and speech synthesis come from the browser, so the voice step
 | What you see | Cause and fix |
 | --- | --- |
 | Your question appears with two empty answer boxes and no message | The request failed. The reason is in the log of the API process (the terminal that runs `npm run dev`); the API keeps running. Fix the cause and ask again. |
+| The API exits right after it starts and the log shows `EADDRINUSE: address already in use` | Another process already uses port 5001, for example an API process from an earlier run that is still running. Stop it and start the API again. |
 | The API log shows `ENOENT ... uploads/sample.pdf` | No file has been uploaded since the API started (the server forgets the document when it restarts). Upload a PDF, then ask again. |
 | The API log shows `invalid_api_key` or another authentication error, and the browser console shows status 401 | OpenAI rejected the key in `server/.env`. Fix the key and restart the API; the keys are read when it starts. |
 | The empty answer boxes appear after one and a half to two minutes and the log shows a connection error | OpenAI could not be reached, and the client gave up after its retries. Check your network and ask again. |
