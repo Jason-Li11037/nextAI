@@ -73,7 +73,7 @@ sequenceDiagram
     RAG->>OpenAI: embed all chunks
     OpenAI-->>RAG: vectors (kept in an in-memory store)
     RAG->>OpenAI: embed the question
-    RAG->>RAG: pick the 4 most similar chunks
+    RAG->>RAG: pick the (up to) 4 most similar chunks
     RAG->>OpenAI: prompt = chunks + question
     OpenAI-->>RAG: document answer
     RAG-->>API: ragAnswer

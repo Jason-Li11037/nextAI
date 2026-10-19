@@ -57,7 +57,7 @@ Do not call `/chat` before you have uploaded a file. Without an upload the serve
 1. **Start (30 seconds).** Run `npm run dev` and open http://localhost:3000. The page shows the `Next AI` header, an upload area and a question input at the bottom.
 2. **Upload (30 seconds).** Drag a PDF onto the upload area, or click it and choose a file. A message `<file name> file uploaded successfully.` appears. The latest upload is the document used for every following question.
 3. **Ask about the document (1 minute).** Type a question the document answers and press `Ask`. A spinner shows while the answer loads. Then the question appears as a blue bubble with two answers below it:
-   - `RAG Answer (from document):` is built from the four chunks of the PDF that are most similar to the question. The prompt tells the model to say that it does not know when the context does not contain the answer.
+   - `RAG Answer (from document):` is built from the (up to) four chunks of the PDF that are most similar to the question. A very short PDF has fewer than four chunks. The prompt tells the model to say that it does not know when the context does not contain the answer.
    - `MCP Answer (with web search):` is a summary of five Google results fetched for the same question through the search tool.
 
    Point out that the first question is slower than the next ones, because the search server is started as a child process on first use. Every question also re-reads and re-embeds the whole PDF, so longer documents are slower.
