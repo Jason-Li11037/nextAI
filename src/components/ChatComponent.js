@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; // Import useState
+import React, { useState, useEffect, useRef } from "react"; // Import useState
 import axios from "axios";
 import { Button, Input } from "antd";
 import { AudioOutlined } from "@ant-design/icons";
@@ -25,13 +25,14 @@ const ChatComponent = (props) => {
   const [speech, setSpeech] = useState();
 
   // speech recognation
-  const {
-    transcript,
-    listening,
-    resetTranscript,
-    browserSupportsSpeechRecognition,
-    isMicrophoneAvailable,
-  } = useSpeechRecognition();
+  const { transcript, listening, resetTranscript } = useSpeechRecognition();
+
+  // Always points at the latest onSearch, so the effect below can call it
+  // without listing it as a dependency (it changes on every render).
+  const onSearchRef = useRef();
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  });
 
   useEffect(() => {
     const initialized_speech = new Speech();
@@ -56,7 +57,7 @@ const ChatComponent = (props) => {
 
   useEffect(() => {
     if (!listening && Boolean(transcript)) {
-      (async () => await onSearch(transcript))();
+      (async () => await onSearchRef.current(transcript))();
       setIsRecording(false);
     }
   }, [listening, transcript]);
