@@ -5,11 +5,13 @@ import { AudioOutlined } from "@ant-design/icons";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
-import Speech from "speak-tts";
 
 const { Search } = Input;
 
 const DOMAIN = "http://localhost:5001";
+
+const SPEECH_LANG = "en-US";
+const PREFERRED_VOICE = "Google US English";
 
 const searchContainer = {
   display: "flex",
@@ -22,7 +24,8 @@ const ChatComponent = (props) => {
   const [searchValue, setSearchValue] = useState("");
   const [isChatModeOn, setIsChatModeOn] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [speech, setSpeech] = useState();
+  // The voice used to read answers aloud, chosen once the browser has loaded its voices
+  const voiceRef = useRef(null);
 
   // speech recognation
   const { transcript, listening, resetTranscript } = useSpeechRecognition();
@@ -35,24 +38,26 @@ const ChatComponent = (props) => {
   });
 
   useEffect(() => {
-    const initialized_speech = new Speech();
-    initialized_speech
-      .init({
-        volume: 1,
-        lang: "en-US",
-        rate: 1,
-        pitch: 1,
-        voice: "Google US English",
-        splitSentences: false,
-      })
-      .then((data) => {
-        // The "data" object contains the list of available voices and the voice synthesis params
-        console.log("Speech is ready, voices are available", data);
-        setSpeech(initialized_speech);
-      })
-      .catch((e) => {
-        console.error("An error occured while initializing : ", e);
-      });
+    if (!("speechSynthesis" in window)) {
+      console.error("Speech synthesis is not supported in this browser");
+      return undefined;
+    }
+    const synth = window.speechSynthesis;
+    // Browsers load their voices asynchronously, so pick again when the list changes
+    const pickVoice = () => {
+      const voices = synth.getVoices();
+      if (voices.length === 0) {
+        return;
+      }
+      voiceRef.current =
+        voices.find((voice) => voice.name === PREFERRED_VOICE) ||
+        voices.find((voice) => voice.lang === SPEECH_LANG) ||
+        null;
+      console.log("Speech is ready, voices are available", voices.length);
+    };
+    pickVoice();
+    synth.addEventListener("voiceschanged", pickVoice);
+    return () => synth.removeEventListener("voiceschanged", pickVoice);
   }, []);
 
   useEffect(() => {
@@ -63,38 +68,46 @@ const ChatComponent = (props) => {
   }, [listening, transcript]);
 
   const talk = (what2say) => {
-    speech
-      .speak({
-        text: what2say,
-        queue: false, // current speech will be interrupted,
-        listeners: {
-          onstart: () => {
-            console.log("Start utterance");
-          },
-          onend: () => {
-            console.log("End utterance");
-          },
-          onresume: () => {
-            console.log("Resume utterance");
-          },
-          onboundary: (event) => {
-            console.log(
-              event.name +
-                " boundary reached after " +
-                event.elapsedTime +
-                " milliseconds."
-            );
-          },
-        },
-      })
-      .then(() => {
-        // if everyting went well, start listening again
-        console.log("Success !");
-        userStartConvo();
-      })
-      .catch((e) => {
-        console.error("An error occurred :", e);
-      });
+    if (!("speechSynthesis" in window)) {
+      return;
+    }
+    const synth = window.speechSynthesis;
+    if (synth.speaking || synth.pending) {
+      // current speech will be interrupted
+      synth.cancel();
+    }
+
+    const utterance = new SpeechSynthesisUtterance(what2say);
+    utterance.lang = SPEECH_LANG;
+    utterance.volume = 1;
+    utterance.rate = 1;
+    utterance.pitch = 1;
+    if (voiceRef.current) {
+      utterance.voice = voiceRef.current;
+    }
+    utterance.onstart = () => {
+      console.log("Start utterance");
+    };
+    utterance.onresume = () => {
+      console.log("Resume utterance");
+    };
+    utterance.onboundary = (event) => {
+      console.log(
+        event.name +
+          " boundary reached after " +
+          event.elapsedTime +
+          " milliseconds."
+      );
+    };
+    utterance.onerror = (event) => {
+      console.error("An error occurred :", event);
+    };
+    utterance.onend = () => {
+      console.log("End utterance");
+      // if everything went well, start listening again
+      userStartConvo();
+    };
+    synth.speak(utterance);
   };
 
   const userStartConvo = () => {
