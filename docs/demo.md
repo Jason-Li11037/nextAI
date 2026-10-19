@@ -72,6 +72,7 @@ Speech recognition and speech synthesis come from the browser, so the voice step
 | What you see | Cause and fix |
 | --- | --- |
 | The API process exits when you ask the first question and the log shows `ENOENT ... uploads/sample.pdf` | No file was uploaded yet. Restart `npm run dev`, upload a PDF, then ask. |
+| Your question appears with two empty answer boxes and no error message | The request failed. The usual cause is that the API process has stopped; look at the terminal that runs `npm run dev`. `npm run dev` keeps the client running and does not restart the API. Fix the cause, restart `npm run dev` and upload the file again, because the server forgets the document when it restarts. |
 | The API process exits within about a second of a question and the log shows an `invalid_api_key` or other authentication error | OpenAI rejected the key in `server/.env`. Fix the key and restart the API. |
 | The API process exits after retrying for a while (about 90 seconds when the connection is refused) and the log shows a connection error | OpenAI could not be reached. Check your network and restart the API. |
 | `MCP Answer` starts with `Error performing web search:` | The search step failed, for example because of no network, and the model summarised the error text. The API keeps running. The text after the colon is the reason. |
