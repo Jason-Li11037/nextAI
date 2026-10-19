@@ -42,6 +42,9 @@ app.get("/chat", async (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, (error) => {
+  if (error) {
+    throw error;
+  }
   console.log("server is running on port " + PORT);
 });

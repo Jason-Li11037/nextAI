@@ -11,7 +11,7 @@ This page describes how the pieces of nextAI fit together and what happens when 
 | RAG pipeline | `server/chat.js` | Loads the PDF, splits it, embeds the chunks, retrieves the best chunks for the question and asks the chat model. |
 | MCP client | `server/chat-mcp.js` | Starts the MCP server as a child process on the first question, calls its search tool and asks the chat model to summarise the results. |
 | MCP server | `server/mcp-server.js` | Exposes one tool, `search_web`, which queries SerpApi. Talks to the client over stdio. |
-| OpenAI | external | Embeddings (`OpenAIEmbeddings`) and the chat model (`gpt-5`, used by both answers). |
+| OpenAI | external | Embeddings (`OpenAIEmbeddings`) and the chat model (`gpt-5` by default, set with `OPENAI_CHAT_MODEL`; used by both answers). |
 | SerpApi | external | Google search results for the web search answer. |
 
 ## System overview
@@ -111,12 +111,14 @@ These follow from keeping the code close to the original project. They are worth
 
 ### Failure behaviour
 
-Measured on the current code with a local stand-in for the OpenAI API:
+Measured on the current code with a local stand-in for the OpenAI API. Express 5 passes errors from `async` route handlers to its error handler, so none of these cases stops the API process.
 
 | Situation | Result |
 | --- | --- |
 | The web search fails (for example no network) | The search tool returns the error text instead of throwing. The model summarises that text, so the request succeeds with HTTP 200 and `mcpAnswer` contains it. |
-| OpenAI rejects the request (for example with a wrong key) | The request throws at once, with no retries. Express 4 does not catch errors from `async` route handlers, so the API process exits within about a second. |
-| OpenAI cannot be reached (measured with a refused connection) | The client retries for about 90 seconds, then the request throws and the API process exits as above. |
-| The search server cannot be started | The request throws and the API process exits, as above. |
-| `/chat` is called before any upload and `server/uploads/sample.pdf` does not exist | The request throws and the API process exits, as above. |
+| OpenAI rejects the request (for example with a wrong key) | The request fails at once, with no retries. The API answers with the status of the error, which is the status OpenAI sent (401 was measured), after about a quarter of a second. |
+| OpenAI cannot be reached (measured with a refused connection) | The client retries for roughly 80 to 105 seconds (three measurements), then the API answers with HTTP 500. |
+| The search server cannot be started (measured with `node` missing from the `PATH` of the child process) | The document answer is produced first, then the request fails with HTTP 500. The next question tries to start the search server again; a second request failed in the same way. |
+| `/chat` is called before any upload and `server/uploads/sample.pdf` does not exist | HTTP 500 within milliseconds, with `ENOENT` in the error. |
+
+In every failing case the error and its stack trace are written to the log of the API process. Express also puts the stack trace, including server file paths, into the error page it returns, unless `NODE_ENV` is `production`; in that case the page only contains the status text (measured with the 401 case). The client does not display errors: a failed request leaves the question with two empty answer boxes.
