@@ -4,6 +4,7 @@ import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { getChatModel } from "./config.js";
 
 // NOTE: change this default filePath to any of your default file name
 const chat = async (filePath = "./uploads/sample.pdf", query) => {
@@ -40,7 +41,7 @@ const chat = async (filePath = "./uploads/sample.pdf", query) => {
 
   // step 5: qa w/ customize the prompt
   const model = new ChatOpenAI({
-    model: "gpt-5",
+    model: getChatModel(),
     ...(apiKey && { apiKey }),
   });
 

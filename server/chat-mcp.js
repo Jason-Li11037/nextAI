@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
+import { getChatModel } from "./config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -84,7 +85,7 @@ const chatMCP = async (query) => {
 
     // Use the LLM to answer the question based on search results
     const model = new ChatOpenAI({
-      model: "gpt-5",
+      model: getChatModel(),
       apiKey,
     });
 
