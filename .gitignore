@@ -18,4 +18,5 @@ knowledge/
 
 # Build output and test coverage
 build/
+dist/
 coverage/
