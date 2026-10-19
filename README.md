@@ -23,6 +23,7 @@ src/
     ├── PdfUploader.js    # drag-and-drop upload to POST /upload
     ├── ChatComponent.js  # question input and voice mode, calls GET /chat
     └── RenderQA.js       # renders the questions and answers
+docs/                # architecture, run guide with demo script, deployment notes
 server/
 ├── server.js        # Express app: POST /upload and GET /chat
 ├── chat.js          # RAG pipeline: load, split, embed, retrieve, answer
@@ -48,6 +49,12 @@ Other scripts:
 
 - `npm start` runs only the client, `npm run server` runs only the API.
 - `npm run build` creates the production build of the client in `build/`.
+
+More documentation:
+
+- [Run guide and demo script](docs/demo.md): setup in detail, a quick check, a five-minute demo and troubleshooting
+- [Architecture](docs/architecture.md): components, diagrams, design limits and measured failure behaviour
+- [Deployment notes](docs/deployment.md): optional and untested, with what the code needs and a non-functional checklist
 
 ## Configuration
 
@@ -87,7 +94,7 @@ Notes:
 - Every question loads, splits and embeds the document again.
 - Dependency versions follow the original project. `multer` 1.x has published security advisories.
 - `typescript` is pinned to 4.x because `react-scripts` 5.0.1 only supports TypeScript 3 and 4. With a newer major version the lint step of `npm run build` fails.
-- `npm run build` prints three ESLint warnings for `ChatComponent.js` (two unused variables and a `useEffect` dependency). The build succeeds, but with `CI=true` (warnings treated as errors) it fails.
+- `npm run build` prints three ESLint warnings for `ChatComponent.js` (two unused variables and a `useEffect` dependency). The build succeeds, but with `CI=true` (warnings treated as errors) it fails; use `CI=false npm run build` where the environment sets `CI=true`.
 
 ## Progress
 
@@ -95,5 +102,5 @@ Notes:
 - [x] React client: upload, ask questions and show the answers
 - [x] Voice mode: speech recognition and speech synthesis
 - [x] Web search answers through an MCP server and client
-- [ ] Demo documentation and deployment notes
+- [x] Demo documentation and deployment notes
 - [ ] Modernize the stack: Express 5, multer 2, Vite, React 19, native speech synthesis, configurable chat model
