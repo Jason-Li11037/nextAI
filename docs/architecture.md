@@ -116,6 +116,7 @@ Measured on the current code with a local stand-in for the OpenAI API:
 | Situation | Result |
 | --- | --- |
 | The web search fails (for example no network) | The search tool returns the error text instead of throwing. The model summarises that text, so the request succeeds with HTTP 200 and `mcpAnswer` contains it. |
-| An OpenAI request fails (for example a wrong key or no network) | The request throws after the client's retries. Express 4 does not catch errors from `async` route handlers, so the API process exits. |
+| OpenAI rejects the request (for example with a wrong key) | The request throws at once, with no retries. Express 4 does not catch errors from `async` route handlers, so the API process exits within about a second. |
+| OpenAI cannot be reached (measured with a refused connection) | The client retries for about 90 seconds, then the request throws and the API process exits as above. |
 | The search server cannot be started | The request throws and the API process exits, as above. |
 | `/chat` is called before any upload and `server/uploads/sample.pdf` does not exist | The request throws and the API process exits, as above. |
