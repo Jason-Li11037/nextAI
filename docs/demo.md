@@ -4,7 +4,7 @@ How to run nextAI on your own machine, check that it works, and show it in about
 
 ## Prerequisites
 
-- Node.js 20 or later and npm
+- Node.js 22 or later and npm
 - An OpenAI API key (embeddings and chat model)
 - A SerpApi API key (web search). SerpApi has a free plan with a monthly search limit; check their current terms before relying on it. Every question uses one search.
 - A PDF with selectable text to ask questions about. The pipeline has no OCR step, and scanned PDFs were not tested.
@@ -27,7 +27,10 @@ Edit `server/.env` and replace the placeholders:
 ```
 OPENAI_API_KEY=<YOUR_OPENAI_API_KEY>
 SERPAPI_KEY=<YOUR_SERPAPI_KEY>
+OPENAI_CHAT_MODEL=gpt-5
 ```
+
+`OPENAI_CHAT_MODEL` is optional; `gpt-5` is the default. Your OpenAI account needs access to the model you choose.
 
 Start the client and the API together:
 
@@ -35,7 +38,7 @@ Start the client and the API together:
 npm run dev
 ```
 
-- The client opens at http://localhost:3000.
+- The client is served at http://localhost:3000; open it in your browser.
 - The API prints `server is running on port 5001`.
 
 `--legacy-peer-deps` is needed in `server/`. Without it `npm install` stops with an `ERESOLVE` error: the server depends on `zod` 4, while an optional peer dependency of `@langchain/community` (`@browserbasehq/stagehand`) asks for `zod` 3. The flag tells npm to ignore peer dependency conflicts.
@@ -50,7 +53,7 @@ curl -F "file=@/path/to/your.pdf" http://localhost:5001/upload
 
 The response is `uploads/<file name>uploaded successfully` (there is no space before `uploaded`) and the file appears in `server/uploads/`.
 
-Do not call `/chat` before you have uploaded a file. Without an upload the server falls back to `server/uploads/sample.pdf`, which is not included, and the API process exits.
+Do not call `/chat` before you have uploaded a file. Without an upload the server falls back to `server/uploads/sample.pdf`, which is not included, so the request fails with HTTP 500 and `ENOENT` in the API log.
 
 ## Demo script (about 5 minutes)
 
@@ -65,15 +68,15 @@ Do not call `/chat` before you have uploaded a file. Without an upload the serve
 5. **Voice mode (1 minute, Chrome).** Click `Chat Mode: Off` so that it reads `Chat Mode: On`. The text input is replaced by a `Click to record` button. Allow microphone access when the browser asks, click the button and say a question. When the browser ends the recognition, the recognised text is sent as the question, the document answer is read aloud, and the microphone starts listening again. Click `Chat Mode: On` to leave the voice mode.
 6. **Wrap up (1 minute).** Open [architecture.md](architecture.md) and walk through the sequence diagram: upload, retrieval, the two answers, and the search server running as a child process behind an MCP client. Mention the limits listed there: one document at a time, no stored index, sequential answers.
 
-Speech recognition and speech synthesis come from the browser, so the voice steps depend on the browser, the operating system and the available voices. They were not tested end to end with a real microphone.
+Speech recognition and speech synthesis come from the browser, so the voice steps depend on the browser, the operating system and the available voices. They were not tested end to end with a real microphone; the voice loop (speak, ask, read aloud, listen again) was only exercised in a headless browser with a fake Web Speech API.
 
 ## Troubleshooting
 
 | What you see | Cause and fix |
 | --- | --- |
-| The API process exits when you ask the first question and the log shows `ENOENT ... uploads/sample.pdf` | No file was uploaded yet. Restart `npm run dev`, upload a PDF, then ask. |
-| Your question appears with two empty answer boxes and no error message | The request failed. The usual cause is that the API process has stopped; look at the terminal that runs `npm run dev`. `npm run dev` keeps the client running and does not restart the API. Fix the cause, restart `npm run dev` and upload the file again, because the server forgets the document when it restarts. |
-| The API process exits within about a second of a question and the log shows an `invalid_api_key` or other authentication error | OpenAI rejected the key in `server/.env`. Fix the key and restart the API. |
-| The API process exits after retrying for a while (about 90 seconds when the connection is refused) and the log shows a connection error | OpenAI could not be reached. Check your network and restart the API. |
+| Your question appears with two empty answer boxes and no message | The request failed. The reason is in the log of the API process (the terminal that runs `npm run dev`); the API keeps running. Fix the cause and ask again. |
+| The API log shows `ENOENT ... uploads/sample.pdf` | No file has been uploaded since the API started (the server forgets the document when it restarts). Upload a PDF, then ask again. |
+| The API log shows `invalid_api_key` or another authentication error, and the browser console shows status 401 | OpenAI rejected the key in `server/.env`. Fix the key and restart the API; the keys are read when it starts. |
+| The empty answer boxes appear after one and a half to two minutes and the log shows a connection error | OpenAI could not be reached, and the client gave up after its retries. Check your network and ask again. |
 | `MCP Answer` starts with `Error performing web search:` | The search step failed, for example because of no network, and the model summarised the error text. The API keeps running. The text after the colon is the reason. |
 | The voice button does nothing or no voice is read aloud | Use Chrome or another Chromium-based browser, allow the microphone, and open the page from `localhost` or over `https`. Other browsers were not tested. |
