@@ -117,7 +117,7 @@ Measured on the current code with a local stand-in for the OpenAI API. Express 5
 | --- | --- |
 | The web search fails (for example no network) | The search tool returns the error text instead of throwing. The model summarises that text, so the request succeeds with HTTP 200 and `mcpAnswer` contains it. |
 | OpenAI rejects the request (for example with a wrong key) | The request fails at once, with no retries. The API answers with the status of the error, which is the status OpenAI sent (401 was measured), after about a quarter of a second. |
-| OpenAI cannot be reached (measured with a refused connection) | The client retries for about 90 to 105 seconds (two measurements), then the API answers with HTTP 500. |
+| OpenAI cannot be reached (measured with a refused connection) | The client retries for roughly 80 to 105 seconds (three measurements), then the API answers with HTTP 500. |
 | The search server cannot be started (measured with `node` missing from the `PATH` of the child process) | The document answer is produced first, then the request fails with HTTP 500. The next question tries to start the search server again; a second request failed in the same way. |
 | `/chat` is called before any upload and `server/uploads/sample.pdf` does not exist | HTTP 500 within milliseconds, with `ENOENT` in the error. |
 
