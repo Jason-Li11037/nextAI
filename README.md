@@ -7,7 +7,7 @@ A full-stack AI application for asking questions about an uploaded PDF, rebuilt 
 - React 19, Vite, Ant Design 6 and axios for the client
 - react-speech-recognition for speech input and the browser's own speech synthesis for reading answers aloud
 - Node.js 22+ and Express 5 for the API
-- LangChain for retrieval-augmented generation (RAG)
+- LangChain for retrieval-augmented generation (RAG), pdf-parse to read the text of the PDF
 - OpenAI for embeddings and the chat model
 - Model Context Protocol (MCP) SDK and SerpApi for the web search answer
 - multer 2 for file uploads
@@ -17,9 +17,11 @@ A full-stack AI application for asking questions about an uploaded PDF, rebuilt 
 ```
 index.html           # entry page of the client
 vite.config.mjs      # Vite configuration (dev server on port 3000)
+.env.example         # template for the client settings (VITE_API_URL)
 public/              # static files of the client
 src/
 ├── main.jsx         # React entry point
+├── config.js        # API address of the client
 ├── App.jsx          # page layout and conversation state
 └── components/
     ├── PdfUploader.jsx    # drag-and-drop upload to POST /upload
@@ -29,21 +31,22 @@ docs/                # architecture, run guide with demo script, deployment note
 server/
 ├── server.js        # Express app: POST /upload and GET /chat
 ├── chat.js          # RAG pipeline: load, split, embed, retrieve, answer
+├── pdf-loader.js    # reads a PDF into one document per page
 ├── chat-mcp.js      # MCP client: calls the search tool and summarises the results
 ├── mcp-server.js    # MCP server (started as a child process) with the search_web tool
-├── config.js        # settings that are read when a question is asked (chat model)
+├── config.js        # chat model setting
 ├── package.json
-├── .env.example     # template for the environment variables
+├── .env.example     # template for the API environment variables
 └── uploads/         # uploaded files (contents are git-ignored)
 ```
 
 ## Getting started
 
-Requirements: Node.js 22 or later, an OpenAI API key and a SerpApi API key (serpapi.com).
+Requirements: Node.js 22.12 or later, an OpenAI API key and a SerpApi API key (serpapi.com).
 
 ```bash
 npm install                          # client dependencies
-cd server && npm install --legacy-peer-deps && cd ..
+cd server && npm install && cd ..
 cp server/.env.example server/.env   # then put your own API keys into server/.env
 npm run dev                          # client on http://localhost:3000, API on http://localhost:5001
 ```
@@ -61,7 +64,7 @@ More documentation:
 
 ## Configuration
 
-Set these in `server/.env`:
+The API reads these from `server/.env`. `npm start` in `server/` (and so `npm run dev`) loads that file with Node's `--env-file-if-exists` flag, and variables that are already set in the environment take precedence. Running `node server.js` directly does not read the file.
 
 | Variable | Description | Default |
 | --- | --- | --- |
@@ -69,6 +72,12 @@ Set these in `server/.env`:
 | `SERPAPI_KEY` | SerpApi API key used by the search tool of the MCP server | none (required for `/chat`) |
 | `OPENAI_CHAT_MODEL` | OpenAI chat model used for both answers | `gpt-5` |
 | `NODE_ENV` | Set to `production` to keep stack traces out of error responses | not set |
+
+The client reads this when it is started or built, from the environment or from a `.env` file in the project root (see `.env.example`):
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `VITE_API_URL` | Base URL of the API | `http://localhost:5001` |
 
 ## API and features
 
@@ -92,7 +101,7 @@ The client:
 Notes:
 
 - Voice mode needs a browser that supports speech recognition (Chromium-based browsers such as Chrome or Edge), microphone permission, and a secure context (`https` or `localhost`). Answers are read with the voices of the browser: `Google US English` (available in Chrome) if it exists, otherwise another `en-US` voice or the default voice.
-- The client calls the API at `http://localhost:5001` (the `DOMAIN` constant in `PdfUploader.jsx` and `ChatComponent.jsx`).
+- The client calls the API at `VITE_API_URL` (see `src/config.js`). Vite puts the value into the bundle, so build the client with the address of the deployed API.
 - Before any upload, `/chat` falls back to `server/uploads/sample.pdf`, which is not included. If that file is missing, the request fails with HTTP 500, so upload a file first.
 - `server/chat-mcp.js` starts `server/mcp-server.js` as a child process (stdio) on the first question and reuses it. Every question calls the `search_web` tool once (5 results) and asks the model to summarise them.
 - `/chat` runs the document answer first and then the web search answer. If an OpenAI request fails, the API answers with an error status and keeps running: the status OpenAI returned for a rejected request (for example 401 for a wrong key), and 500 when OpenAI cannot be reached or the search server cannot be started. A failing web search does not fail the request: the search tool returns the error text and the model summarises it, so `mcpAnswer` then contains that text.
@@ -109,3 +118,4 @@ Notes:
 - [x] Web search answers through an MCP server and client
 - [x] Demo documentation and deployment notes
 - [x] Modernize the stack: Express 5, multer 2, Vite, React 19, native speech synthesis, configurable chat model
+- [x] Follow-up cleanups: own PDF loader on pdf-parse 2, Node's `--env-file` instead of dotenv, configurable API address

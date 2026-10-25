@@ -8,7 +8,7 @@ This page describes how the pieces of nextAI fit together and what happens when 
 | --- | --- | --- |
 | React client | `src/` | Upload area, question input, answer list and the voice mode. Talks to the API over HTTP. |
 | Express API | `server/server.js` | Two routes, `POST /upload` and `GET /chat`. Keeps the path of the latest uploaded file in memory. |
-| RAG pipeline | `server/chat.js` | Loads the PDF, splits it, embeds the chunks, retrieves the best chunks for the question and asks the chat model. |
+| RAG pipeline | `server/chat.js`, `server/pdf-loader.js` | Reads the PDF (one document per page that has text, using pdf-parse), splits it, embeds the chunks, retrieves the best chunks for the question and asks the chat model. |
 | MCP client | `server/chat-mcp.js` | Starts the MCP server as a child process on the first question, calls its search tool and asks the chat model to summarise the results. |
 | MCP server | `server/mcp-server.js` | Exposes one tool, `search_web`, which queries SerpApi. Talks to the client over stdio. |
 | OpenAI | external | Embeddings (`OpenAIEmbeddings`) and the chat model (`gpt-5` by default, set with `OPENAI_CHAT_MODEL`; used by both answers). |
