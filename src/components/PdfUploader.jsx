@@ -2,16 +2,15 @@ import React from "react";
 import axios from "axios"; // Import axios for HTTP requests
 import { InboxOutlined } from "@ant-design/icons";
 import { message, Upload } from "antd";
+import { API_URL } from "../config";
 
 const { Dragger } = Upload;
-
-const DOMAIN = "http://localhost:5001";
 
 const uploadToBackend = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
   try {
-    const response = await axios.post(`${DOMAIN}/upload`, formData, {
+    const response = await axios.post(`${API_URL}/upload`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
