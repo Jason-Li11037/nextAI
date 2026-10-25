@@ -5,10 +5,9 @@ import { AudioOutlined } from "@ant-design/icons";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+import { API_URL } from "../config";
 
 const { Search } = Input;
-
-const DOMAIN = "http://localhost:5001";
 
 const SPEECH_LANG = "en-US";
 const PREFERRED_VOICE = "Google US English";
@@ -142,7 +141,7 @@ const ChatComponent = (props) => {
     setIsLoading(true);
 
     try {
-      const response = await axios.get(`${DOMAIN}/chat`, {
+      const response = await axios.get(`${API_URL}/chat`, {
         params: {
           question,
         },

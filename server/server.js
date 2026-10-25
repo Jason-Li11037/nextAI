@@ -1,11 +1,8 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import multer from "multer";
 import chat from "./chat.js";
 import chatMCP from "./chat-mcp.js";
-
-dotenv.config();
 
 const app = express();
 app.use(cors());

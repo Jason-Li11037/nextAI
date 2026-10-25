@@ -15,9 +15,9 @@ The API has no authentication and no rate limit, and CORS is open to every origi
 
 ### API
 
-- Node.js 22 or later.
-- Install with `npm ci --legacy-peer-deps` inside `server/`. The flag is required, see the [run guide](demo.md#set-up-and-start).
-- Start it with `node server.js` **from the `server/` directory** (`npm start` inside `server/` does the same). Upload paths are relative to the working directory: measured by starting the API from the repository root with `node server/server.js`, where every upload failed with HTTP 500 because `uploads/` did not exist.
+- Node.js 22.12 or later.
+- Install with `npm ci` inside `server/`.
+- Start it with `npm start` **from the `server/` directory** (`node server.js` does the same, but only `npm start` also loads `server/.env`). Upload paths are relative to the working directory: measured by starting the API from the repository root with `node server/server.js`, where every upload failed with HTTP 500 because `uploads/` did not exist.
 - The port is fixed at `5001` in `server.js`. A platform that assigns the port through an environment variable needs a code change, or a platform setting that lets you choose the port.
 - `node` must be on the `PATH` of the runtime, because the MCP client starts the search server with `node mcp-server.js`. The child process inherits the environment of the API process, including `SERPAPI_KEY`.
 - Set `NODE_ENV=production` for the API. Without it, the error pages that Express returns contain the stack trace and the file paths of the server (measured); with it they only contain the status text.
@@ -31,7 +31,7 @@ npm run build   # output in dist/
 ```
 
 - The build does not treat warnings as errors, so build services that set `CI=true` are fine (measured: `CI=true npm run build` succeeds). It prints an advisory that the main chunk is larger than 500 kB, mostly because of Ant Design.
-- The API address is hard-coded as `const DOMAIN = "http://localhost:5001"` in `src/components/PdfUploader.jsx` and `src/components/ChatComponent.jsx`. A deployed client must call the address of the deployed API, so this constant has to change before the build. A common way is to read it from an environment variable that Vite inlines at build time (names starting with `VITE_`), for example `import.meta.env.VITE_API_URL`. That change is not made in this repository yet.
+- The client reads the address of the API from `VITE_API_URL` when it is started or built (default `http://localhost:5001`, see `src/config.js`). Vite puts the value into the bundle, so build with the address of the deployed API, for example `VITE_API_URL=https://<your-api-host> npm run build`. Measured: a production bundle built with a different address sends its upload request to that address, and a trailing slash is removed.
 - Voice mode needs a secure context, so serve the client over `https`.
 
 ## Configuration and secrets
@@ -40,8 +40,11 @@ npm run build   # output in dist/
 | --- | --- | --- |
 | `OPENAI_API_KEY` | API | Required for `/chat`. |
 | `SERPAPI_KEY` | API | Required for the web search answer. |
+| `OPENAI_CHAT_MODEL` | API | Optional, `gpt-5` by default. |
+| `NODE_ENV` | API | Set to `production`. |
+| `VITE_API_URL` | Client build | The address of the deployed API. |
 
-Use the secret or environment variable settings of your platform. The code reads `process.env`, and `server/.env` is optional: the API was started locally with the variables set only in the environment and no `.env` file. Do not put real keys into the repository, the build command or the client bundle. The client needs no secret.
+Use the secret or environment variable settings of your platform. The code reads `process.env`. `npm start` also loads `server/.env` when that file exists (Node's `--env-file-if-exists`), and variables that are already set in the environment take precedence over the file (measured). The API starts without a `.env` file when the variables are set in the environment. Do not put real keys into the repository, the build command or the client bundle. The client needs no secret.
 
 ## Storage and scaling
 
@@ -56,7 +59,7 @@ These are examples only; any static host plus any host that can run a Node.js pr
 | Part | Example | What to configure (untested) |
 | --- | --- | --- |
 | Client | AWS Amplify Hosting | Build with `npm ci` and `npm run build`, publish the `dist/` directory, and set the API address as described above. |
-| API | AWS App Runner | Install with `cd server && npm ci --legacy-peer-deps`, start with `cd server && node server.js`, set port `5001`, add the two keys as secrets, set `NODE_ENV=production`, keep the instance count at one. |
+| API | AWS App Runner | Install with `cd server && npm ci`, start with `cd server && npm start`, set port `5001`, add the two keys as secrets, set `NODE_ENV=production`, keep the instance count at one. |
 
 Region, account and service names are specific to your setup and are left out on purpose.
 
@@ -68,7 +71,7 @@ Region, account and service names are specific to your setup and are left out on
 | Scalability | Not scalable as built: one document in process memory, files on local disk, no shared state. See Storage and scaling. |
 | Reliability | Errors inside `/chat` become HTTP error responses and the process keeps running. A failed web search is reported inside `mcpAnswer` instead. The client does not display errors. The project code adds no retries or timeouts of its own. |
 | Availability | A single instance with no health check route. Availability depends on the platform restarting the process. |
-| Maintainability | Small code base, no automated tests. Dependencies are on current major versions (Express 5, multer 2, React 19, Ant Design 6, Vite). `@langchain/community`, which provides the PDF loader, is marked as deprecated on npm. |
+| Maintainability | Small code base, no automated tests. Dependencies are on current major versions (Express 5, multer 2, React 19, Ant Design 6, Vite). The text of the PDF comes from `pdf-parse` 2 through a small loader in `server/pdf-loader.js`. |
 | Security | No authentication, open CORS, no rate limit, no limit on the type or size of uploaded files. Uploaded files are stored under their original names. Error pages contain stack traces unless `NODE_ENV=production`. The text of the document chunks and the questions are sent to OpenAI, and the questions are sent to SerpApi. |
 | Usability | Single page with an upload area, a question box and an optional voice mode. When a request fails, the interface shows the question with two empty answer boxes and no message (measured with the API stopped by a rejected key). |
 | Accessibility | Not audited. The client uses Ant Design components with their default semantics, and the voice mode depends on browser support. |

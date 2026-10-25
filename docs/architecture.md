@@ -8,7 +8,7 @@ This page describes how the pieces of nextAI fit together and what happens when 
 | --- | --- | --- |
 | React client | `src/` | Upload area, question input, answer list and the voice mode. Talks to the API over HTTP. |
 | Express API | `server/server.js` | Two routes, `POST /upload` and `GET /chat`. Keeps the path of the latest uploaded file in memory. |
-| RAG pipeline | `server/chat.js` | Loads the PDF, splits it, embeds the chunks, retrieves the best chunks for the question and asks the chat model. |
+| RAG pipeline | `server/chat.js`, `server/pdf-loader.js` | Reads the PDF (one document per page that has text, using pdf-parse), splits it, embeds the chunks, retrieves the best chunks for the question and asks the chat model. |
 | MCP client | `server/chat-mcp.js` | Starts the MCP server as a child process on the first question, calls its search tool and asks the chat model to summarise the results. |
 | MCP server | `server/mcp-server.js` | Exposes one tool, `search_web`, which queries SerpApi. Talks to the client over stdio. |
 | OpenAI | external | Embeddings (`OpenAIEmbeddings`) and the chat model (`gpt-5` by default, set with `OPENAI_CHAT_MODEL`; used by both answers). |
@@ -117,7 +117,7 @@ Measured on the current code with a local stand-in for the OpenAI API. Express 5
 | --- | --- |
 | The web search fails (for example no network) | The search tool returns the error text instead of throwing. The model summarises that text, so the request succeeds with HTTP 200 and `mcpAnswer` contains it. |
 | OpenAI rejects the request (for example with a wrong key) | The request fails at once, with no retries. The API answers with the status of the error, which is the status OpenAI sent (401 was measured), after about a quarter of a second. |
-| OpenAI cannot be reached (measured with a refused connection) | The client retries for roughly 80 to 105 seconds (three measurements), then the API answers with HTTP 500. |
+| OpenAI cannot be reached (measured with a refused connection) | The client retries for roughly 75 to 105 seconds (four measurements), then the API answers with HTTP 500. |
 | The search server cannot be started (measured with `node` missing from the `PATH` of the child process) | The document answer is produced first, then the request fails with HTTP 500. The next question tries to start the search server again; a second request failed in the same way. |
 | `/chat` is called before any upload and `server/uploads/sample.pdf` does not exist | HTTP 500 within milliseconds, with `ENOENT` in the error. |
 

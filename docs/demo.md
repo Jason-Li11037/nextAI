@@ -4,7 +4,7 @@ How to run nextAI on your own machine, check that it works, and show it in about
 
 ## Prerequisites
 
-- Node.js 22 or later and npm
+- Node.js 22.12 or later and npm
 - An OpenAI API key (embeddings and chat model)
 - A SerpApi API key (web search). SerpApi has a free plan with a monthly search limit; check their current terms before relying on it. Every question uses one search.
 - A PDF with selectable text to ask questions about. The pipeline has no OCR step, and scanned PDFs were not tested.
@@ -18,7 +18,7 @@ From the repository root:
 
 ```bash
 npm install
-cd server && npm install --legacy-peer-deps && cd ..
+cd server && npm install && cd ..
 cp server/.env.example server/.env
 ```
 
@@ -30,7 +30,7 @@ SERPAPI_KEY=<YOUR_SERPAPI_KEY>
 OPENAI_CHAT_MODEL=gpt-5
 ```
 
-`OPENAI_CHAT_MODEL` is optional; `gpt-5` is the default. Your OpenAI account needs access to the model you choose.
+`OPENAI_CHAT_MODEL` is optional; `gpt-5` is the default. Your OpenAI account needs access to the model you choose. `npm start` in `server/`, and so `npm run dev`, loads this file; running `node server.js` yourself does not.
 
 Start the client and the API together:
 
@@ -41,7 +41,6 @@ npm run dev
 - The client is served at http://localhost:3000; open it in your browser.
 - The API prints `server is running on port 5001`.
 
-`--legacy-peer-deps` is needed in `server/`. Without it `npm install` stops with an `ERESOLVE` error: the server depends on `zod` 4, while an optional peer dependency of `@langchain/community` (`@browserbasehq/stagehand`) asks for `zod` 3. The flag tells npm to ignore peer dependency conflicts.
 
 ## Check that it runs
 
