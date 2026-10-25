@@ -3,7 +3,7 @@ import { OpenAIEmbeddings } from "@langchain/openai";
 import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
 import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
-import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import loadPdf from "./pdf-loader.js";
 import { getChatModel } from "./config.js";
 
 // NOTE: change this default filePath to any of your default file name
@@ -12,9 +12,7 @@ const chat = async (filePath = "./uploads/sample.pdf", query) => {
   const apiKey = process.env.OPENAI_API_KEY;
 
   // step 1:
-  const loader = new PDFLoader(filePath);
-
-  const data = await loader.load();
+  const data = await loadPdf(filePath);
 
   // step 2:
   const textSplitter = new RecursiveCharacterTextSplitter({
